@@ -20,9 +20,14 @@ jobs:
           ref: ${{ env.ZED_REF }}
           path: zed
 
+      - uses: actions/checkout@v4
+        with:
+          path: ci
+          clean: false
+
       - name: Patch eval-cli
         working-directory: zed
-        run: python3 ../patch_eval_cli.py .
+        run: python3 ../ci/patch_eval_cli.py .
 
       - name: Build eval-cli
         working-directory: zed
