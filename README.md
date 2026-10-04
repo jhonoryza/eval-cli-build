@@ -12,16 +12,17 @@ eval-cli --workdir /repo --model zed/<model> --instruction "..." --output-dir /t
 
 ## Build
 
-Trigger `.github/workflows/build.yml`, then download the binary from the rolling
-[`latest` release](https://github.com/jhonoryza/eval-cli-build/releases/tag/latest):
+Trigger `.github/workflows/build.yml`, then download the binary from the
+[releases](https://github.com/jhonoryza/eval-cli-build/releases) (newest first):
 
 ```sh
-gh release download latest --repo jhonoryza/eval-cli-build -p eval-cli
+gh release download --repo jhonoryza/eval-cli-build -p eval-cli
 chmod +x eval-cli
 ```
 
-Workflow artifacts expire after 90 days; release assets do not, so `latest` is repointed at
-every successful build on `main` and its notes record the Zed commit plus the binary's sha256.
+Workflow artifacts expire after 90 days; release assets do not. Each build publishes to
+`zed-<short sha>`, so bumping `ZED_REF` creates a new pinned release and never overwrites the
+binary someone is already using. Its notes record the Zed commit and the binary's sha256.
 
 The asset is a static `x86_64-unknown-linux-musl` binary, so it runs on any Linux distro.
 

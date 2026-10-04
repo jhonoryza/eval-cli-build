@@ -47,7 +47,9 @@ jobs:
           path: zed/out/eval-cli
           if-no-files-found: error
 
-  # Workflow artifacts expire after 90 days; release assets do not.
+  # Workflow artifacts expire after 90 days; release assets do not. Published under
+  # zed-<short sha> so a Zed bump creates a new pinned release instead of overwriting
+  # the binary someone is already relying on. Rebuilding the same ref just refreshes it.
   publish:
     needs: build
     runs-on: ubuntu-latest
@@ -64,7 +66,7 @@ jobs:
           name: eval-cli-linux-x86_64
           path: out
 
-      - name: Publish rolling release
+      - name: Publish pinned release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ZED_REF: ${{ env.ZED_REF }}
@@ -72,10 +74,11 @@ jobs:
           set -euo pipefail
           chmod +x out/eval-cli
           sha=$(sha256sum out/eval-cli | cut -d' ' -f1)
+          tag="zed-${ZED_REF:0:8}"
           notes=$(printf 'eval-cli built from `zed-industries/zed@%s` with `patch_eval_cli.py`.\n\nsha256 `%s`\n' "$ZED_REF" "$sha")
-          if gh release view latest >/dev/null 2>&1; then
-            gh release upload latest out/eval-cli --clobber
-            gh release edit latest --notes "$notes"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" out/eval-cli --clobber
+            gh release edit "$tag" --notes "$notes"
           else
-            gh release create latest --title 'eval-cli (rolling)' --notes "$notes" out/eval-cli
+            gh release create "$tag" --title "eval-cli ($tag)" --notes "$notes" out/eval-cli
           fi
