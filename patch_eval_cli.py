@@ -27,16 +27,11 @@ EDITS = [
         "\n"
         "    // Establish the Zed session from the stored credentials. eval-cli never connected\n"
         "    // on its own, which left the client SignedOut and every provider unauthenticated.\n"
-        "    let connect_cx = cx.to_async();\n"
-        "    cx.spawn(async move |_, _| {\n"
-        "        let _ = client.connect(true, &connect_cx).await;\n"
+        "    let connect_client = client.clone();\n"
+        "    cx.spawn(async move |cx| {\n"
+        "        let _ = connect_client.connect(true, cx).await;\n"
         "    })\n"
         "    .detach();\n",
-    ),
-    (
-        "crates/eval_cli/src/main.rs",
-        "use futures::{FutureExt, select_biased};\n",
-        "use futures::{FutureExt, StreamExt, select_biased};\n",
     ),
     (
         "crates/eval_cli/src/main.rs",
@@ -44,11 +39,12 @@ EDITS = [
         "            // The connect spawned in headless.rs runs in the background; give the session\n"
         "            // a chance to come up before asking providers whether they are authenticated.\n"
         "            {\n"
-        "                let client = app_state.client.clone();\n"
-        "                let mut status = client.status();\n"
+        "                let status = app_state.client.status();\n"
         "                let deadline = Instant::now() + Duration::from_secs(90);\n"
         "                while status.borrow().is_signed_out() && Instant::now() < deadline {\n"
-        "                    status.next().await;\n"
+        "                    cx.background_executor()\n"
+        "                        .timer(Duration::from_millis(250))\n"
+        "                        .await;\n"
         "                }\n"
         "            }\n"
         "\n"
