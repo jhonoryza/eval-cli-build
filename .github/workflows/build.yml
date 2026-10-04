@@ -1,0 +1,39 @@
+name: build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+env:
+  # Zed has no published eval-cli release asset, so build it from source with
+  # their own Dockerfile. Bump this to move to a newer Zed commit.
+  ZED_REF: a84689073d296dfd39987bc7dd478e43ef76d83a
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: zed-industries/zed
+          ref: ${{ env.ZED_REF }}
+          path: zed
+
+      - name: Build eval-cli
+        working-directory: zed
+        run: |
+          set -euo pipefail
+          docker build --platform linux/amd64 -f crates/eval_cli/Dockerfile -t eval-cli-builder .
+          cid=$(docker create eval-cli-builder)
+          mkdir -p out
+          docker cp "$cid":/eval-cli out/eval-cli
+          docker rm "$cid"
+          chmod +x out/eval-cli
+          ls -lh out/eval-cli
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eval-cli-linux-x86_64
+          path: zed/out/eval-cli
+          if-no-files-found: error
