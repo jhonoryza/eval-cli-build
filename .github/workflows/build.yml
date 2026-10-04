@@ -25,7 +25,7 @@ jobs:
         run: |
           set -euo pipefail
           docker build --platform linux/amd64 -f crates/eval_cli/Dockerfile -t eval-cli-builder .
-          cid=$(docker create eval-cli-builder)
+          cid=$(docker create eval-cli-builder /eval-cli)
           mkdir -p out
           docker cp "$cid":/eval-cli out/eval-cli
           docker rm "$cid"
