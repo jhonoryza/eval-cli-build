@@ -35,6 +35,11 @@ EDITS = [
     ),
     (
         "crates/eval_cli/src/main.rs",
+        '                    "format_on_save": "off"\n                }}"\n',
+        '                    "format_on_save": "off"\n                }}\n',
+    ),
+    (
+        "crates/eval_cli/src/main.rs",
         "            let auth_tasks = cx.update(|cx| {\n",
         "            // The connect spawned in headless.rs runs in the background; give the session\n"
         "            // a chance to come up before asking providers whether they are authenticated.\n"
