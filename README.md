@@ -12,14 +12,18 @@ eval-cli --workdir /repo --model zed/<model> --instruction "..." --output-dir /t
 
 ## Build
 
-Trigger `.github/workflows/build.yml`, then download the artifact:
+Trigger `.github/workflows/build.yml`, then download the binary from the rolling
+[`latest` release](https://github.com/jhonoryza/eval-cli-build/releases/tag/latest):
 
 ```sh
-gh run download --repo jhonoryza/eval-cli-build --name eval-cli-linux-x86_64
+gh release download latest --repo jhonoryza/eval-cli-build -p eval-cli
 chmod +x eval-cli
 ```
 
-The artifact is a static `x86_64-unknown-linux-musl` binary, so it runs on any Linux distro.
+Workflow artifacts expire after 90 days; release assets do not, so `latest` is repointed at
+every successful build on `main` and its notes record the Zed commit plus the binary's sha256.
+
+The asset is a static `x86_64-unknown-linux-musl` binary, so it runs on any Linux distro.
 
 ## Why a repo
 
