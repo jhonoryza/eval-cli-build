@@ -20,6 +20,10 @@ jobs:
           ref: ${{ env.ZED_REF }}
           path: zed
 
+      - name: Patch eval-cli
+        working-directory: zed
+        run: python3 ../patch_eval_cli.py .
+
       - name: Build eval-cli
         working-directory: zed
         run: |
