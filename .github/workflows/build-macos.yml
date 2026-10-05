@@ -1,0 +1,70 @@
+name: build-macos
+
+on:
+  # Manual only: macOS runners are 10x the CI-minute cost of Linux, so this never
+  # runs on push. Linux keeps building on every main push via build.yml.
+  workflow_dispatch:
+
+env:
+  # Keep in sync with build.yml's ZED_REF. Workflows can't share env.
+  ZED_REF: a84689073d296dfd39987bc7dd478e43ef76d83a
+
+jobs:
+  build-and-publish:
+    runs-on: macos-14 # arm64
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: zed-industries/zed
+          ref: ${{ env.ZED_REF }}
+          path: zed
+
+      - uses: actions/checkout@v4
+        with:
+          path: ci
+          clean: false
+
+      - name: Patch eval-cli
+        working-directory: zed
+        run: python3 ../ci/patch_eval_cli.py .
+
+      # Native build per upstream docs (crates/eval_cli/README.md):
+      # cargo build --release -p eval_cli
+      - name: Build eval-cli
+        working-directory: zed
+        run: |
+          set -euo pipefail
+          cargo build --release -p eval_cli
+          strip target/release/eval-cli
+          ls -lh target/release/eval-cli
+          file target/release/eval-cli
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eval-cli-macos-arm64
+          path: zed/target/release/eval-cli
+          if-no-files-found: error
+
+      - name: Publish to pinned release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ZED_REF: ${{ env.ZED_REF }}
+        run: |
+          set -euo pipefail
+          bin=zed/target/release/eval-cli
+          sha=$(shasum -a 256 "$bin" | cut -d' ' -f1)
+          tag="zed-${ZED_REF:0:8}"
+          asset=eval-cli-macos-arm64
+          cp "$bin" "$asset"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "$asset" --clobber
+            body=$(gh release view "$tag" --json body -q .body)
+            body=$(printf '%s\n' "$body" | grep -v '^macos-arm64 sha256' || true)
+            gh release edit "$tag" --notes "$(printf '%s\nmacos-arm64 sha256 `%s`\n' "$body" "$sha")"
+          else
+            gh release create "$tag" --title "eval-cli ($tag)" \
+              --notes "$(printf 'eval-cli built from `zed-industries/zed@%s` with `patch_eval_cli.py`.\n\nmacos-arm64 sha256 `%s`\n' "$ZED_REF" "$sha")" \
+              "$asset"
+          fi

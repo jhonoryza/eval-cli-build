@@ -12,7 +12,7 @@ eval-cli --workdir /repo --model zed/<model> --instruction "..." --output-dir /t
 
 ## Build
 
-Trigger `.github/workflows/build.yml`, then download the binary from the
+Trigger `.github/workflows/build.yml` (Linux; runs on every `main` push), then download the binary from the
 [releases](https://github.com/jhonoryza/eval-cli-build/releases) (newest first):
 
 ```sh
@@ -24,7 +24,11 @@ Workflow artifacts expire after 90 days; release assets do not. Each build publi
 `zed-<short sha>`, so bumping `ZED_REF` creates a new pinned release and never overwrites the
 binary someone is already using. Its notes record the Zed commit and the binary's sha256.
 
-The asset is a static `x86_64-unknown-linux-musl` binary, so it runs on any Linux distro.
+The Linux asset is a static `x86_64-unknown-linux-musl` binary, so it runs on any Linux distro.
+A macOS arm64 asset (`eval-cli-macos-arm64`) is built on demand via
+`.github/workflows/build-macos.yml` (`workflow_dispatch` only — macOS runners cost
+10x Linux minutes, so it never runs on push) and published to the same
+`zed-<short sha>` release.
 
 ## Why a repo
 
